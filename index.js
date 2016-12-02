@@ -18,6 +18,35 @@ const i18nDirs = [
   'i18n-data/pot'
   ];
 
+const dirsExist = ()=> {
+  return i18nDirs.every(fs.existsSync);
+}
+
+const collectErrors = ()=> {
+  let errors = [];
+  if (!dirsExist()) {
+    errors.push('Missing directories, please run ember generate-i18n-dirs');
+  }
+  return errors;
+}
+
+const reportErrors = (errors)=> {
+  console.error('Errors found :');
+  errors.forEach((error)=> {
+    console.error(` - ${error}`);
+  });
+}
+
+const allOK = ()=> {
+  const errors = collectErrors();
+  if (errors.length !== 0) {
+    reportErrors(errors);
+    return false;
+  } else {
+    return true;
+  }
+}
+
 module.exports = {
   name: 'ember-cli-generate-translations',
   includedCommands: function() {
@@ -27,6 +56,9 @@ module.exports = {
         description: 'Generate the translations/ YAML files from PO translations',
         run: function(commandOptions, rawArgs) {
           console.log('Generating translations/ yaml files from i19n-data/po/ po files');
+          if (!allOK()) {
+            return;
+          }
           const files = glob.sync("i18n-data/po/*.po");
           files.forEach(
             (fileName)=> {
@@ -55,6 +87,9 @@ module.exports = {
         description: 'Generate the i18n-data/app.pot file from the primary language',
         run: function(commandOptions, rawArgs) {
           console.log('Generating app.pot from translations/en-us.yaml');
+          if (!allOK()) {
+            return;
+          }
           const yamlData = YAML.load('translations/en-us.yaml');
           const potGenerator = new POTGenerator(yamlData);
           potGenerator.run();
