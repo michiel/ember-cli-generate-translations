@@ -11,6 +11,13 @@ const YAMLGenerator = require('./lib/yaml-generator');
 
 const pofileLocaleRegExp = /\/(\w*-\w*)\.po/;
 
+const configFile = './config/ember-intl.js';
+
+const configProperties = [
+  'baseLocale',
+  'inputPath'
+  ];
+
 const i18nDirs = [
   'translations',
   'i18n-data',
@@ -18,14 +25,42 @@ const i18nDirs = [
   'i18n-data/pot'
   ];
 
+const exists = (prop)=> {
+  return (
+    (prop !== null) &&
+    (prop !== undefined)
+  );
+}
+
 const dirsExist = ()=> {
   return i18nDirs.every(fs.existsSync);
 }
+
+const configExists = ()=> {
+  return fs.existsSync(configFile);
+}
+
+const configPropertiesExist = ()=> {
+  let errors = [];
+  const config = getConfig();
+}
+
 
 const collectErrors = ()=> {
   let errors = [];
   if (!dirsExist()) {
     errors.push('Missing directories, please run ember generate-i18n-dirs');
+  }
+  if (!configExists()) {
+    errors.push(`Missing configuration in ${configFile}, please setup ember-intl`);
+  } else {
+    const config = getConfig();
+    configProperties.forEach((prop)=> {
+      if (!exists(config[prop])) {
+        errors.push(`Config file ${configFile} is missing property ${prop}`);
+      }
+    });
+
   }
   return errors;
 }
@@ -45,6 +80,10 @@ const allOK = ()=> {
   } else {
     return true;
   }
+}
+
+const getConfig = ()=> {
+  return require(configFile);
 }
 
 module.exports = {
