@@ -1,91 +1,22 @@
 /* jshint node: true */
 'use strict';
 
-const fs   = require('fs');
-const YAML = require('yamljs');
+const fs     = require('fs');
+const glob   = require('glob');
+const mkdirp = require('mkdirp');
+const YAML   = require('yamljs');
 
-const POTGenerator = require('./lib/pot-generator');
+const POTGenerator  = require('./lib/pot-generator');
+const YAMLGenerator = require('./lib/yaml-generator');
 
-const content = fs.readFileSync('/home/michiel/Downloads/xds-th.po', 'utf-8');
-const sourceRE = /^#. source /;
+const pofileLocaleRegExp = /\/(\w*-\w*)\.po/;
 
-const getMsgId = (msg) => {
-  return msg.replace(/msgid /, '').replace(/"/g, '').toString();
-}
-
-const getMsgStr = (msg) => {
-  return msg.replace(/msgstr /, '').replace(/"/g, '').toString();
-}
-
-class YAMLGenerator {
-  constructor(pofile) {
-    this.pofile = pofile;
-    this.rows   = pofile.split(/\n/);
-    this.json   = {};
-    this.index  = 0;
-  }
-
-  valueForJson(path, valId, valStr) {
-    let steps = path.split(/\./);
-    let obj = this.json;
-    while (steps.length !== 1) {
-      let step = steps.shift();
-      if (!!!obj[step]) {
-        obj[step] = {};
-      }
-      obj = obj[step];
-    }
-    if (valStr === "") {
-      obj[steps[0]] = 'missing-nls';
-    } else {
-      obj[steps[0]] = valStr;
-    }
-  }
-
-  getSourcesAt() {
-    let sources = [];
-    let matching = true;
-    while (matching) {
-      let row = this.rows[this.index];
-      if (row.match(sourceRE)) {
-        sources.push(row.replace(sourceRE, ''));
-        this.index++;
-      } else {
-        matching = false;
-      }
-    }
-    return sources;
-  }
-
-  run() {
-    while (this.index < this.rows.length) {
-      let row = this.rows[this.index];
-      if (row.match(/^$/)) {
-        this.index++;
-      } else if (row.match(sourceRE)) {
-        let sources = this.getSourcesAt();
-        // console.log('This is ', rows[index], ' with ', sources);
-        let nextRow = this.rows[this.index+1];
-        sources.forEach((src)=> {
-          this.valueForJson(src, getMsgId(row), getMsgStr(nextRow));
-        });
-        this.index++;
-        this.index++;
-      } else {
-        // console.log('Skipping row ', row);
-        this.index++;
-      }
-    }
-  }
-
-  export() {
-    return YAML.stringify(this.json, 20);
-  }
-
-
-
-
-}
+const i18nDirs = [
+  'translations',
+  'i18n-data',
+  'i18n-data/po',
+  'i18n-data/pot'
+  ];
 
 module.exports = {
   name: 'ember-cli-generate-translations',
@@ -95,11 +26,28 @@ module.exports = {
         name: 'generate-i18n-yaml',
         description: 'Generate the translations/ YAML files from PO translations',
         run: function(commandOptions, rawArgs) {
-          console.log('Generating translations/ yaml files from i18n-data/po/ po files');
-          const pofile = fs.readFileSync('i18n-data/po/xds-th.po', 'utf-8');
-          const yamlGenerator = new YAMLGenerator(pofile);
-          yamlGenerator.run();
-          console.log('GENERATED', yamlGenerator.export());
+          console.log('Generating translations/ yaml files from i19n-data/po/ po files');
+          const files = glob.sync("i18n-data/po/*.po");
+          files.forEach(
+            (fileName)=> {
+              const locale = fileName.match(pofileLocaleRegExp)[1];
+
+              console.log(` - Generating translation from ${fileName} for ${locale}`);
+
+              const pofile = fs.readFileSync(fileName, 'utf-8');
+
+              const yamlGenerator = new YAMLGenerator(pofile);
+              yamlGenerator.run();
+
+              const outPath = `translations/${locale}.yaml`;
+
+              console.log(` - Writing ${locale} to ${outPath}`);
+              fs.writeFileSync(
+                outPath,
+                yamlGenerator.export(),
+                'utf8');
+            }
+          );
         }
       },
       i18nPOTCommand: {
@@ -110,14 +58,29 @@ module.exports = {
           const yamlData = YAML.load('translations/en-us.yaml');
           const potGenerator = new POTGenerator(yamlData);
           potGenerator.run();
-          console.log('GENERATED', potGenerator.export());
+
+          const outPath = `i18n-data/pot/app.pot`;
+
+          console.log(` - Writing POT file to to ${outPath}`);
+          fs.writeFileSync(
+            outPath,
+            potGenerator.export(),
+            'utf8');
         }
       },
       i18nInitDirs: {
         name: 'generate-i18n-dirs',
         description: 'Generate the translations, i18n-data dirs if they do not exist',
         run: function(commandOptions, rawArgs) {
-          console.log('world!');
+          console.log('Generating i18n-data dirs');
+          i18nDirs.forEach((dir)=> {
+            if (fs.existsSync(dir)) {
+              console.log(` - ${dir} exists`);
+            } else {
+              console.log(` - creating ${dir}`);
+              mkdirp.sync(dir);
+            }
+          });
         }
       }
     }
