@@ -1,12 +1,14 @@
 {
   "name": "ember-cli-generate-translations",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "ember-cli addon for transforming translation YAML files to POT and PO files back to YAML",
   "keywords": [
-    "ember-addon"
+    "ember-addon",
+    "internationalization",
+    "i18n"
   ],
   "license": "MIT",
-  "author": "",
+  "author": "Michiel Kalkman <michiel@nosuchtype.com>",
   "directories": {
     "doc": "doc",
     "test": "tests"
