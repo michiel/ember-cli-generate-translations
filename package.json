@@ -1,6 +1,6 @@
 {
   "name": "ember-cli-generate-translations",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "ember-cli addon for transforming translation YAML files to POT and PO files back to YAML",
   "keywords": [
     "ember-addon",
@@ -13,7 +13,7 @@
     "doc": "doc",
     "test": "tests"
   },
-  "repository": "",
+  "repository": "https://github.com/michiel/ember-cli-generate-translations.git",
   "scripts": {
     "build": "ember build",
     "start": "ember server",
