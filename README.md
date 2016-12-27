@@ -1,5 +1,6 @@
 # ember-cli-generate-translations
 
+[![Ember Observer Score](https://emberobserver.com/badges/ember-cli-generate-translations.svg)](https://emberobserver.com/addons/ember-cli-generate-translations)
 
 This ember-addon generates a POT file for translation from the master YAML file
 and imports the translated PO files into YAML language files.
